@@ -50,6 +50,17 @@ class Core():
                 except AttributeError:
                     pass
 
+    def removeAppByID(self, appID):
+        self.apps.pop(appID)
+
+    def removeAppByIDString(self, appID):
+        try:
+            self.apps.pop(uuid.UUID(appID))
+        except KeyError:
+            print("Don't have " + appID + ", can offer:")
+            for a in self.apps:
+                print(a)
+
     def removeApp(self, app):
         for a in self.apps:
             if self.apps[a] == app:

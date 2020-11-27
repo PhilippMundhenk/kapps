@@ -49,24 +49,30 @@ class Kapp():
             listFile = response.read().decode('utf-8')
             parsed = json.loads(listFile)
 
+            tmpDir = "/mnt/us/kapps/tmp/"
+
             # download selected app:
-            os.mkdir("/tmp/kapps/")
+            try:
+                os.mkdir(tmpDir)
+            except OSError:
+                pass
+
             for a in parsed["apps"]:
                 if a["name"] == appName:
-                    with open('/tmp/kapps/' + appName + '.kapp', 'wb') as f:
+                    with open(tmpDir + appName + '.kapp', 'wb') as f:
                         request = urllib2.Request(a["package"])
                         response = urllib2.urlopen(
                             request, context=ssl._create_unverified_context())
                         f.write(response.read())
                         f.close()
 
-                    tmpPath = "/tmp/kapps/" + a["name"]
+                    tmpPath = tmpDir + a["name"]
                     try:
                         shutil.rmtree(tmpPath)
                     except OSError:
                         pass
                     os.mkdir(tmpPath)
-                    command = "unzip /tmp/kapps/" + appName + \
+                    command = "unzip " + tmpDir + appName + \
                         ".kapp -d " + tmpPath
                     os.system(command)
 
@@ -86,13 +92,13 @@ class Kapp():
                     except OSError:
                         pass
                     shutil.move(folder, "/mnt/us/kapps/apps")
-                    os.remove("/tmp/kapps/" + a["name"] + ".kapp")
+                    os.remove(tmpDir + a["name"] + ".kapp")
                     shutil.rmtree(tmpPath)
 
                     self.ctx.scanApps()
 
             # TODO: redirect to app install screen
-            return {"code": 301, "headers": [['Location',self.getAppURL()]]}
+            return {"code": 301, "headers": [['Location', self.getAppURL()]]}
         elif path == self.getAppURL():
             # app is started
 
@@ -107,9 +113,9 @@ class Kapp():
             parsed = json.loads(listFile)
 
             for a in parsed["apps"]:
-                text = text + "<td><a href=\"" + self.getAppURL() + \
+                text = text + "<tr><td><a href=\"" + self.getAppURL() + \
                     "/download/" + a["name"] + "\"><h3>" + \
-                    a["name"] + "</h3></a></td>"
+                    a["name"] + "</h3></a></td></tr>"
 
             with open(self.urlToAppPath(path) + '/res/list.html', 'r') as file:
                 return {"code": 200, "content": file.read().replace("$APPS$", text)}
