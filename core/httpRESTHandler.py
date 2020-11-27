@@ -8,26 +8,32 @@ class HTTPRESTHandler(BaseHTTPRequestHandler):
     def getLauncher(self):
         # TODO: Insert reading of apps here!
         text = "<tr>"
-        for a in self.ctx.getAppDetails():
-            text = text + "<td>" + "<p align=\"center\"><a href=\"" + a.replace(".", "/") + "\"><img border=\"0\" src=\"" + a.replace(".", "/") + "/" + self.ctx.getAppDetails(
-            )[a]["icon"] + "\"/><br>" + self.ctx.getAppDetails()[a]["name"] + "</a></p>" + "</td>"
+        cnt = 0
+        for uuid, app in sorted(self.ctx.getApps().items(), key=lambda x: x[1].name):
+#        for uuid, app in self.ctx.getApps().items():
+            text = text + "<td>" + "<p align=\"center\"><a href=\"" + app.getAppURL() + "\"><img border=\"0\" src=\"" + \
+                app.getAppURL() + "/" + app.icon + "\"/><br>" + app.name + "</a></p>" + "</td>"
+
+            cnt = cnt + 1
+            if cnt % 3 == 0:
+                text = text + "</tr><tr>"
         text = text + "</tr>"
 
         with open('core/res/launcher.html', 'r') as file:
             return file.read().replace("$APPS$", text)
 
-    def handleApp(self, path):
-        appID = path.split("/")[1] + "." + path.split("/")[2]
-        print("handling app: " + appID)
-        return self.ctx.getAppHandlers()[appID](path)
-
     def do_GET(self):
-        if re.search('/apps', self.path) is not None:
-            resp = self.handleApp(self.path)
+        if self.path.startswith('/apps'):
+            appID = self.path.split("/")[2]
+            resp = self.ctx.getAppByIDString(appID).handleGet(self.path)
             self.send_response(resp["code"])
+            if "headers" in resp:
+                for h in resp["headers"]:
+                    self.send_header(h[0], h[1])
             self.end_headers()
-            self.wfile.write(resp["content"])
-        elif re.search('/', self.path) is not None:
+            if "content" in resp:
+                self.wfile.write(resp["content"])
+        elif self.path == '/':
             self.send_response(200)
             self.end_headers()
             self.wfile.write(self.getLauncher())
