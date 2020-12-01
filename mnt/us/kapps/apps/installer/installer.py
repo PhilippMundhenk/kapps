@@ -3,43 +3,31 @@ import json
 import urllib2
 import ssl
 import shutil
+from core.kapp import Kapp
 
 
-class Kapp():
+class Installer(Kapp):
     icon = "res/icon.png"
     name = "Installer"
-
-    def __init__(self, appID, appPath, ctx):
-        self.appID = appID
-        self.appPath = appPath
-        self.ctx = ctx
-
-    def getAppPythonPath(self):
-        return self.appPath
-
-    def getAppFSPath(self):
-        return self.appPath.replace(".", "/") + "/"
-
-    def getAppURL(self):
-        return "/apps/" + str(self.appID)
-
-    def urlToAppPath(self, url):
-        return url.replace(self.getAppURL(), self.getAppFSPath())
-
-    def getRes(self, path):
-        with open(path, 'r') as file:
-            return file.read()
 
     def handleGet(self, path):
         if "/res" in path:
             # app resource requested
             return {"code": 200, "content": self.getRes(self.urlToAppPath(path))}
-        if path.startswith(self.getAppURL() + "/download"):
+        elif path.startswith(self.getAppURL() + "/download"):
+            appName = path.split(
+                self.getAppURL() + "/download")[1].replace("/", "", 1)
+            page = self.getRes(self.getAppFSPath() + "/res/installing.html")
+            page = page.replace("$APP$", appName)
+            page = page.replace("$URL$", path.replace(
+                "/download/", "/install/"))
+            return {"code": 200, "content": page}
+        elif path.startswith(self.getAppURL() + "/install"):
             print("download triggered")
 
             # format: /apps/<appID>/download/<appName>
             appName = path.split(
-                self.getAppURL() + "/download")[1].replace("/", "", 1)
+                self.getAppURL() + "/install")[1].replace("/", "", 1)
 
             # Download list of available apps:
             request = urllib2.Request(
@@ -97,8 +85,7 @@ class Kapp():
 
                     self.ctx.scanApps()
 
-            # TODO: redirect to app install screen
-            return {"code": 301, "headers": [['Location', self.getAppURL()]]}
+            return {"code": 301, "headers": [['Location', "/"]]}
         elif path == self.getAppURL():
             # app is started
 
@@ -112,17 +99,21 @@ class Kapp():
             listFile = response.read().decode('utf-8')
             parsed = json.loads(listFile)
 
+            text = text + '<tr><td colspan="3"><p style="font-size:25px;"><u>Repo github.com/PhilippMundhenk/kapps-list:</u></p></td></tr>'
+
             for a in parsed["apps"]:
-                text = text + "<tr><td><a href=\"" + self.getAppURL() + \
-                    "/download/" + a["name"] + "\"><h3>" + \
-                    a["name"] + "</h3></a></td></tr>"
+                text = text + "<tr><td><h3>" + \
+                    a["name"] + "</h3></td><td></td><td><a href=\"" + self.getAppURL() + \
+                    "/download/" + \
+                    a["name"] + \
+                    '" class="button">(re-)install/update</a></td></tr>'
 
             with open(self.urlToAppPath(path) + '/res/list.html', 'r') as file:
                 return {"code": 200, "content": file.read().replace("$APPS$", text)}
         else:
-            return {"code": 404, "content": "<html><h1>Not Found</h1></html>"}
+            return {"code": 404, "content": '<html><head><meta http-equiv = "refresh" content = "2; url = /" /></head><h1 align="center">Error!</h1></html>'}
 
 
 def register(appID, appPath, ctx):
-    print("register Installer")
-    return Kapp(appID, appPath, ctx)
+    print("register " + Installer.name)
+    return Installer(appID, appPath, ctx)

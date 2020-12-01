@@ -3,12 +3,15 @@ from core.httpRESTHandler import HTTPRESTHandler
 import importlib
 import pkgutil
 import uuid
+from subprocess import call
 
 import apps
 
 
 class Core():
+    systemApps = ["apps.installer", "apps.uninstaller", "apps.settings"]
     apps = {}
+    subscriptions = {}
 
     def import_submodules(self, package, recursive=True):
         """ Import all submodules of a module, recursively,
@@ -29,16 +32,13 @@ class Core():
         return results
 
     def scanApps(self):
-        print("scanning apps...")
         AllApps = self.import_submodules(apps)
 
         for name in AllApps:
-            print("found " + name)
 
             alreadyRegistered = False
             for a in self.apps:
                 if name.startswith(self.apps[a].getAppPythonPath()):
-                    print("skipping " + name + " (already registered)")
                     alreadyRegistered = True
 
             if not alreadyRegistered:
@@ -52,6 +52,12 @@ class Core():
 
     def removeAppByID(self, appID):
         self.apps.pop(appID)
+
+    def isSystemApp(self, pythonPath):
+        if pythonPath in self.systemApps:
+            return True
+        else:
+            return False
 
     def removeAppByIDString(self, appID):
         try:
@@ -70,6 +76,9 @@ class Core():
     def getApps(self):
         return self.apps
 
+    def getSortedApps(self):
+        return sorted(self.getApps().items(), key=lambda x: x[1].name)
+
     def getAppByIDString(self, id):
         return self.apps[uuid.UUID(id)]
 
@@ -80,6 +89,24 @@ class Core():
         for a in self.apps:
             if self.apps[a].getAppPythonPath() == path:
                 return self.apps[a]
+
+    def flushScreen(self):
+        call(["/mnt/us/kapps/core/util/flushScreen.sh"])
+
+    def subscribe(self, kcommand, callback, subscriber):
+        if kcommand in self.subscriptions:
+            self.subscriptions[kcommand.hash()].append(callback)
+        else:
+            self.subscriptions[kcommand.hash()] = [callback]
+
+        print("registered " + kcommand.hash())
+
+    def publish(self, kcommand):
+        if kcommand.hash() not in self.subscriptions:
+            print("no subscriber registered for " + kcommand.hash())
+        else:
+            for callback in self.subscriptions[kcommand.hash()]:
+                callback()
 
     def main(self):
         self.scanApps()

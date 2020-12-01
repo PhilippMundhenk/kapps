@@ -1,30 +1,10 @@
 import shutil
+from core.kapp import Kapp
 
 
-class Kapp():
+class Uninstaller(Kapp):
     icon = "res/icon.png"
     name = "Uninstaller"
-
-    def __init__(self, appID, appPath, ctx):
-        self.appID = appID
-        self.ctx = ctx
-        self.appPath = appPath
-
-    def getAppPythonPath(self):
-        return self.appPath
-
-    def getAppFSPath(self):
-        return self.appPath.replace(".", "/") + "/"
-
-    def urlToAppPath(self, url):
-        return url.replace(self.getAppURL(), self.getAppFSPath())
-
-    def getAppURL(self):
-        return "/apps/" + str(self.appID)
-
-    def getRes(self, path):
-        with open(path.replace(self.getAppURL(), self.getAppFSPath()), 'r') as file:
-            return file.read()
 
     def handleGet(self, path):
         if "/res" in path:
@@ -45,17 +25,20 @@ class Kapp():
 
             text = ""
 
-            for a in self.ctx.getApps():
-                text = text + "<tr><td><a href=\"" + self.getAppURL() + \
-                    "/delete/" + str(a) + "\"><h3>" + \
-                    self.ctx.getApps()[a].name + "</h3></a></td></tr>"
+            for uuid, a in self.ctx.getSortedApps():
+                if not self.ctx.isSystemApp(a.getAppPythonPath()):
+                    text = text + "<tr><td><h3>" + \
+                        a.name + '</h3></td><td></td>' + \
+                        '<td><a href="' + self.getAppURL() + \
+                        "/delete/" + str(uuid) + '" class="button">uninstall</a>' + \
+                        '</td></tr>'
 
             with open(self.urlToAppPath(path) + '/res/list.html', 'r') as file:
                 return {"code": 200, "content": file.read().replace("$APPS$", text)}
         else:
-            return {"code": 404, "content": "<html><h1>Not Found</h1></html>"}
+            return {"code": 404, "content": '<html><head><meta http-equiv = "refresh" content = "2; url = /" /></head><h1 align="center">Error!</h1></html>'}
 
 
 def register(appID, appPath, ctx):
-    print("register TestApp")
-    return Kapp(appID, appPath, ctx)
+    print("register " + Uninstaller.name)
+    return Uninstaller(appID, appPath, ctx)
