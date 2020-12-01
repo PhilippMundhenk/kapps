@@ -1,0 +1,33 @@
+a {
+	text-decoration: none;
+}
+
+a:link, a:visited {
+	color: #000000;
+}
+
+a:hover {
+	color: #000000;
+}
+
+a.button {
+    -webkit-appearance: button;
+    text-decoration: none;
+    float: right;
+    padding: 5px 5px;
+}
+
+table {
+    width: 100%;
+    border: solid 0px black;
+}
+
+table td {
+    vertical-align: middle;
+    border: solid 0px black;
+}
+
+table td p {
+    vertical-align: middle;
+    border: solid 0px black;
+}

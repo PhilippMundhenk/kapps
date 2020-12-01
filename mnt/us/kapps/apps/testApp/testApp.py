@@ -9,22 +9,18 @@ class Ping(Kcommand):
 
 
 class TestApp(Kapp):
-    icon = "res/icon.png"
     name = "TestApp"
 
     def handlePing(self):
         print("Ping received")
+        return "xyz"
 
-    def handleGet(self, path):
-        if "/res" in path:
-            # app resource requested
-            return {"code": 200, "content": self.getRes(self.urlToAppPath(path))}
-        elif path.split(self.getAppURL())[1] == "":
-            # app is started
-            with open(self.getAppFSPath() + "/res/testApp.html", 'r') as file:
-                return {"code": 200, "content": file.read()}
-        else:
-            return {"code": 404, "content": "<html><h1>Not Found</h1></html>"}
+    def homeCallback(self):
+        self.publish(Ping())
+        return {"code": 200, "content": self.getRes("testApp.html")}
+
+    def iconCallback(self):
+        return {"code": 200, "content": self.getRes("icon.png")}
 
 
 def register(appID, appPath, ctx):

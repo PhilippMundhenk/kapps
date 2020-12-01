@@ -4,8 +4,13 @@ import importlib
 import pkgutil
 import uuid
 from subprocess import call
-
+import sys
 import apps
+
+
+basePath = "/mnt/us/kapps/"
+corePath = basePath + "/core/"
+appPath = basePath + "/apps/"
 
 
 class Core():
@@ -35,20 +40,24 @@ class Core():
         AllApps = self.import_submodules(apps)
 
         for name in AllApps:
-
+            print("found " + name)
             alreadyRegistered = False
             for a in self.apps:
                 if name.startswith(self.apps[a].getAppPythonPath()):
+                    print("app " + name + " is already registered")
                     alreadyRegistered = True
 
             if not alreadyRegistered:
                 try:
                     register = getattr(AllApps[name], "register")
                     appID = uuid.uuid1()
+                    print("registering " + name + "...")
                     app = register(appID, name.rsplit(".", 1)[0], self)
+                    print(name + " registered")
                     self.apps[appID] = app
-                except AttributeError:
-                    pass
+                except AttributeError as e:
+                    print("Error registering app: ")
+                    print(e)
 
     def removeAppByID(self, appID):
         self.apps.pop(appID)
@@ -99,14 +108,40 @@ class Core():
         else:
             self.subscriptions[kcommand.hash()] = [callback]
 
-        print("registered " + kcommand.hash())
+       # print("registered " + kcommand.hash() + " with " + str(callback))
 
-    def publish(self, kcommand):
-        if kcommand.hash() not in self.subscriptions:
-            print("no subscriber registered for " + kcommand.hash())
+    def publish(self, kcommand, data=None):
+        self.publishByKcommandHash(kcommand.hash(), data)
+
+    def publishByKcommandHash(self, kcommandHash, data=None):
+        for k in self.subscriptions:
+            print("found subscription for " + k)
+
+        if kcommandHash not in self.subscriptions:
+            print("no subscriber registered for " + kcommandHash)
         else:
-            for callback in self.subscriptions[kcommand.hash()]:
-                callback()
+            returns = []
+            for callback in self.subscriptions[kcommandHash]:
+                if (data):
+                    try:
+                        resp = callback(data)
+                    except TypeError as e:
+                        print(e)
+                        sys.exit(0)
+                else:
+                    resp = callback()
+                returns.append(resp)
+
+            return returns
+
+    def getBasePath(self):
+        return basePath
+
+    def getCorePath(self):
+        return corePath
+
+    def getAppsPath(self):
+        return appPath
 
     def main(self):
         self.scanApps()
