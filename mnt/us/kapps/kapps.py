@@ -6,6 +6,8 @@ import uuid
 from subprocess import call
 import sys
 import apps
+import os
+from core.commands import Quit
 
 
 basePath = "/mnt/us/kapps/"
@@ -108,8 +110,6 @@ class Core():
         else:
             self.subscriptions[kcommand.hash()] = [callback]
 
-       # print("registered " + kcommand.hash() + " with " + str(callback))
-
     def publish(self, kcommand, data=None):
         self.publishByKcommandHash(kcommand.hash(), data)
 
@@ -143,8 +143,15 @@ class Core():
     def getAppsPath(self):
         return appPath
 
+    def quit(self):
+        command = "/bin/sh " + basePath + "stop.sh"
+        os.system(command)
+        os._exit(0)
+
     def main(self):
         self.scanApps()
+
+        self.subscribe(Quit(), self.quit, self)
 
         print("starting webserver...")
         HTTPRESTHandler.ctx = self
