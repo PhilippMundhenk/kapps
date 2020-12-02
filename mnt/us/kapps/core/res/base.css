@@ -11,10 +11,11 @@ a:hover {
 }
 
 a.button {
-    -webkit-appearance: button;
     text-decoration: none;
     float: right;
     padding: 5px 5px;
+    border: solid 1px black;
+    border-radius: 15px;
 }
 
 table {

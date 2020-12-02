@@ -39,9 +39,6 @@ class Kapp():
     def getAppFSPath(self):
         return self.appPath.replace(".", "/") + "/"
 
-    def getAppURL(self):
-        return "/apps/" + str(self.appID)
-
     def urlToAppPath(self, url):
         return url.replace(self.getAppURL(), self.getAppFSPath())
 
@@ -53,7 +50,7 @@ class Kapp():
         self.ctx.subscribe(kcommand, callback, self)
 
     def publish(self, kcommand):
-        return self.ctx.publish(kcommand)
+        return self.ctx.publish(kcommand, kcommand.params)
 
     def homeCallback(self):
         with open(self.ctx.getCorePath() + '/res/appHome.html', 'r') as file:

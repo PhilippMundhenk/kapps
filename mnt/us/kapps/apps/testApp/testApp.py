@@ -1,5 +1,6 @@
 from core.kapp import Kapp
-from core.kcommand import Kcommand
+from core.kcommand import Kcommand, KcommandParam
+from apps.notifications.notifications import Notify
 
 
 class Ping(Kcommand):
@@ -17,6 +18,9 @@ class TestApp(Kapp):
 
     def homeCallback(self):
         self.publish(Ping())
+        title = KcommandParam(key="title", value="Test")
+        message = KcommandParam(key="message", value="TestApp started")
+        self.publish(Notify([title, message]))
         return {"code": 200, "content": self.getRes("testApp.html")}
 
     def iconCallback(self):
