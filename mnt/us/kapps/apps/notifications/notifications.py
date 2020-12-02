@@ -61,8 +61,10 @@ class Notifications(Kapp):
         return {"code": 200, "content": content}
 
     def iconCallback(self):
-        return {"code": 200, "content": self.getRes("icon.png")}
-
+        if len(self.notifications) > 0:
+            return {"code": 200, "content": self.getRes("iconNewNotif.png")}
+        else:
+            return {"code": 200, "content": self.getRes("icon.png")}
 
 def register(appID, appPath, ctx):
     print("register " + Notifications.name)
