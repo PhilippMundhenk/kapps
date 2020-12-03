@@ -1,6 +1,7 @@
 from core.kapp import Kapp
 from core.kcommand import Kcommand, KcommandParam
 from core.commands import Notify
+from core.httpResponse import HTTPResponse
 
 
 class Ping(Kcommand):
@@ -21,10 +22,11 @@ class TestApp(Kapp):
         title = KcommandParam(key="title", value="Test")
         message = KcommandParam(key="message", value="TestApp started")
         self.publish(Notify([title, message]))
-        return {"code": 200, "content": self.getRes("testApp.html")}
+        # raise(Exception("asdasdasd"))
+        return HTTPResponse(content=self.getRes("testApp.html"))
 
     def iconCallback(self):
-        return {"code": 200, "content": self.getRes("icon.png")}
+        return HTTPResponse(content=self.getRes("icon.png"))
 
 
 def register(appID, appPath, ctx):

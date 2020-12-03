@@ -7,6 +7,7 @@ from subprocess import call
 import apps
 import os
 from core.commands import Quit
+from core.errors import Kerror
 
 
 basePath = "/mnt/us/kapps/"
@@ -15,7 +16,8 @@ appPath = basePath + "/apps/"
 
 
 class Core():
-    systemApps = ["apps.installer", "apps.uninstaller", "apps.settings", "apps.quit"]
+    systemApps = ["apps.installer", "apps.uninstaller",
+                  "apps.settings", "apps.quit"]
     apps = {}
     subscriptions = {}
 
@@ -121,12 +123,17 @@ class Core():
                 if data is not None:
                     try:
                         resp = callback(data)
-                    except TypeError as e:
+                    except Exception as e:
                         print(e)
-                        print("ERROR! Command " + kcommandHash + " called with data, though no data expected")
-                        os._exit(0)
+                        returns.append(Kerror(technicalMessage=str(
+                            e), guiMessage="Something went wrong"))
                 else:
-                    resp = callback()
+                    try:
+                        resp = callback()
+                    except Exception as e:
+                        print(e)
+                        returns.append(Kerror(technicalMessage=str(
+                            e), guiMessage="Something went wrong..."))
 
                 returns.append(resp)
 

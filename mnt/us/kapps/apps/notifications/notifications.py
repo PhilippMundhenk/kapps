@@ -3,6 +3,7 @@ from core.Kcommand import Kcommand, KcommandParam
 from core.commands import Notify, Launcher
 import uuid
 from datetime import datetime
+from core.httpResponse import HTTPResponse
 
 
 class DismissNotification(Kcommand):
@@ -62,13 +63,13 @@ class Notifications(Kapp):
                 '" class="button">Dismiss</a></td></tr>'
 
         content = self.getRes("list.html").replace("$NOTIFS$", text)
-        return {"code": 200, "content": content}
+        return HTTPResponse(content=content)
 
     def iconCallback(self):
         if len(self.notifications) > 0:
-            return {"code": 200, "content": self.getRes("iconNewNotif.png")}
+            return HTTPResponse(content=self.getRes("iconNewNotif.png"))
         else:
-            return {"code": 200, "content": self.getRes("icon.png")}
+            return HTTPResponse(content=self.getRes("icon.png"))
 
 
 def register(appID, appPath, ctx):

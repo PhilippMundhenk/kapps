@@ -1,5 +1,6 @@
 from core.kapp import Kapp
 from core.commands import Quit, Launcher
+from core.httpResponse import HTTPResponse
 
 
 class QuitApp(Kapp):
@@ -10,7 +11,7 @@ class QuitApp(Kapp):
         return self.publish(Launcher())[0]
 
     def iconCallback(self):
-        return {"code": 200, "content": self.getRes("icon.png")}
+    	return HTTPResponse(content=self.getRes("icon.png"))
 
 
 def register(appID, appPath, ctx):

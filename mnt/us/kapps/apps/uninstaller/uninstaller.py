@@ -3,6 +3,7 @@ from core.kapp import Kapp
 from core.Kcommand import Kcommand, KcommandParam
 import uuid
 from core.commands import Launcher, Notify
+from core.httpResponse import HTTPResponse
 
 
 class Uninstall(Kcommand):
@@ -49,10 +50,10 @@ class Uninstaller(Kapp):
                     '</td></tr>'
 
         content = self.getRes("list.html").replace("$APPS$", text)
-        return {"code": 200, "content": content}
+        return HTTPResponse(content=content)
 
     def iconCallback(self):
-        return {"code": 200, "content": self.getRes("icon.png")}
+        return HTTPResponse(content=self.getRes("icon.png"))
 
 
 def register(appID, appPath, ctx):

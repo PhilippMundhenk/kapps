@@ -1,6 +1,8 @@
 from BaseHTTPServer import BaseHTTPRequestHandler
 from core.kcommand import KcommandParam
 from core.commands import Launcher
+from core.httpResponse import HTTPResponse
+from core.errors import Kerror
 
 
 class HTTPRESTHandler(BaseHTTPRequestHandler):
@@ -10,6 +12,13 @@ class HTTPRESTHandler(BaseHTTPRequestHandler):
     def getRes(self, path):
         with open(path.replace("/", "", 1), 'r') as file:
             return file.read()
+
+    def error(self, techMsg, guiMsg):
+        self.send_response(404)
+        self.end_headers()
+        self.wfile.write('<html><head><meta http-equiv = "refresh" content = "2; url = /" /></head>' +
+                         '<h1 align="center">Error!</h1><br><p>' +
+                         guiMsg + '</p><br/><br/>' + '<p>' + techMsg + '</p>' + '</html>')
 
     def do_GET(self):
         HTTPRESTHandler.cnt = HTTPRESTHandler.cnt + 1
@@ -37,27 +46,32 @@ class HTTPRESTHandler(BaseHTTPRequestHandler):
                 resp = self.ctx.publishByKcommandHash(
                     kcommandHash, data=params)[0]
 
-            self.send_response(resp["code"])
-            if "headers" in resp:
-                for h in resp["headers"]:
-                    self.send_header(h[0], h[1])
-            self.end_headers()
-            if "content" in resp:
-                self.wfile.write(resp["content"])
+            if isinstance(resp, HTTPResponse):
+                self.send_response(resp.returnCode)
+                if resp.headers is not None:
+                    for h in resp.headers:
+                        self.send_header(h[0], h[1])
+                self.end_headers()
+                if resp.content is not None:
+                    self.wfile.write(resp.content)
+            elif isinstance(resp, Kerror):
+                self.error(resp.technicalMessage, resp.guiMessage)
+            else:
+                print("ERROR! Expected HTTPResponse...")
+                # TODO: Add proper Error handling here
+
         elif self.path == '/':
             resp = self.ctx.publish(Launcher())[0]
             if resp is None:
                 print("ERROR!")
-            self.send_response(resp["code"])
+            self.send_response(resp.returnCode)
             self.end_headers()
-            self.wfile.write(resp["content"])
+            self.wfile.write(resp.content)
         elif self.path.startswith("/core/res/"):
             self.send_response(200)
             self.end_headers()
             self.wfile.write(self.getRes(self.path))
         else:
-            self.send_response(404)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
+            self.error("Command/Resource not found", "Something went wrong...")
 
             return

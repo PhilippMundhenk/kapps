@@ -7,6 +7,8 @@ from core.kapp import Kapp
 import uuid
 from core.kcommand import Kcommand, KcommandParam
 from core.commands import Launcher, Notify
+from core.httpResponse import HTTPResponse
+from core.errors import Kerror
 
 
 class WaitScreen(Kcommand):
@@ -29,7 +31,7 @@ class Installer(Kapp):
     name = "Installer"
 
     def iconCallback(self):
-        return {"code": 200, "content": self.getRes("icon.png")}
+        return HTTPResponse(content=self.getRes("icon.png"))
 
     def homeCallback(self):
         # app is started
@@ -59,7 +61,7 @@ class Installer(Kapp):
             print("text= " + text)
 
         content = self.getRes("list.html").replace("$APPS$", text)
-        return {"code": 200, "content": content}
+        return HTTPResponse(content=content)
 
     def waitScreenCallback(self, params):
         # TODO: unsubscribe WaitScreen?
@@ -74,11 +76,9 @@ class Installer(Kapp):
                 # TODO: replace with install command!
                 page = page.replace("$URL$", Install(params).toURL())
 
-                return {"code": 200, "content": page}
+                return HTTPResponse(content=page)
 
-        else:
-            # TODO: Pythonize this!
-            return {"code": 404, "content": '<html><head><meta http-equiv = "refresh" content = "2; url = /" /></head><h1 align="center">Error!</h1></html>'}
+        return Kerror(technicalMessage="No Parameter 'appName' given", guiMessage="Something went wrong...")
 
     def installCallback(self, params):
         # TODO: unsubscribe Install?
