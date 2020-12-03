@@ -1,12 +1,8 @@
 from core.kapp import Kapp, Home
 from core.Kcommand import Kcommand, KcommandParam
+from core.commands import Notify, Launcher
 import uuid
-
-
-class Notify(Kcommand):
-    def __init__(self, params=None):
-        super(Notify, self).__init__(
-            "Notify", "kapps-notification-command-hash", params=params)
+from datetime import datetime
 
 
 class DismissNotification(Kcommand):
@@ -22,6 +18,7 @@ class Notification():
         self.title = title
         self.id = uuid.uuid4()
         self.message = ""
+        self.time = datetime.now()
 
 
 class Notifications(Kapp):
@@ -33,7 +30,10 @@ class Notifications(Kapp):
             if p.key == "notifID":
                 self.notifications.pop(p.value)
 
-        return {"code": 301, "headers": [['Location', Home(self.homeHash).toURL()]]}
+        if len(self.notifications) == 0:
+            return self.publish(Launcher())[0]
+        else:
+            return self.publish(Home(self.homeHash))[0]
 
     def notificationCallback(self, params):
         n = None
@@ -52,8 +52,12 @@ class Notifications(Kapp):
         text = ""
         for n in self.notifications:
             p = KcommandParam(key="notifID", value=str(n))
-            text = text + "<tr style=\"border: solid; border-width: 1px 0;\">" + "<td>" + self.notifications[n].title + "<br />" + \
-                self.notifications[n].message + "</td>" + "<td></td>" + "<td><a href=\"" + \
+            text = text + "<tr style=\"border: solid; border-width: 1px 0;\">" + "<td>" + \
+                "<b>" + self.notifications[n].title + "</b><br />" + \
+                self.notifications[n].message + "<br/>" + \
+                "<p style=\"font-size:15px;\">" + self.notifications[n].time.strftime("%H:%M") + "</p>" + \
+                "</td>" + \
+                "<td></td>" + "<td><a href=\"" + \
                 DismissNotification([p]).toURL() + \
                 '" class="button">Dismiss</a></td></tr>'
 
@@ -65,6 +69,7 @@ class Notifications(Kapp):
             return {"code": 200, "content": self.getRes("iconNewNotif.png")}
         else:
             return {"code": 200, "content": self.getRes("icon.png")}
+
 
 def register(appID, appPath, ctx):
     print("register " + Notifications.name)

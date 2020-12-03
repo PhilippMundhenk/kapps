@@ -6,6 +6,7 @@ import shutil
 from core.kapp import Kapp
 import uuid
 from core.kcommand import Kcommand, KcommandParam
+from core.commands import Launcher, Notify
 
 
 class WaitScreen(Kcommand):
@@ -136,8 +137,12 @@ class Installer(Kapp):
 
                         self.ctx.scanApps()
 
-        # TODO: Pythonize this!
-        return {"code": 301, "headers": [['Location', "/"]]}
+                        title = KcommandParam(key="title", value="Installer")
+                        message = KcommandParam(
+                            key="message", value="App " + a["name"] + " installed")
+                        self.publish(Notify([title, message]))
+
+        return self.publish(Launcher())[0]
 
 
 def register(appID, appPath, ctx):

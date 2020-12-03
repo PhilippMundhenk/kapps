@@ -4,7 +4,6 @@ import importlib
 import pkgutil
 import uuid
 from subprocess import call
-import sys
 import apps
 import os
 from core.commands import Quit
@@ -16,7 +15,7 @@ appPath = basePath + "/apps/"
 
 
 class Core():
-    systemApps = ["apps.installer", "apps.uninstaller", "apps.settings"]
+    systemApps = ["apps.installer", "apps.uninstaller", "apps.settings", "apps.quit"]
     apps = {}
     subscriptions = {}
 
@@ -111,25 +110,24 @@ class Core():
             self.subscriptions[kcommand.hash()] = [callback]
 
     def publish(self, kcommand, data=None):
-        self.publishByKcommandHash(kcommand.hash(), data)
+        return self.publishByKcommandHash(kcommand.hash(), data)
 
     def publishByKcommandHash(self, kcommandHash, data=None):
-        for k in self.subscriptions:
-            print("found subscription for " + k)
-
-        if kcommandHash not in self.subscriptions:
-            print("no subscriber registered for " + kcommandHash)
-        else:
+        print("received command: " + kcommandHash + " with data: " + str(data))
+        if kcommandHash in self.subscriptions:
             returns = []
             for callback in self.subscriptions[kcommandHash]:
-                if (data):
+                resp = None
+                if data is not None:
                     try:
                         resp = callback(data)
                     except TypeError as e:
                         print(e)
-                        sys.exit(0)
+                        print("ERROR! Command " + kcommandHash + " called with data, though no data expected")
+                        os._exit(0)
                 else:
                     resp = callback()
+
                 returns.append(resp)
 
             return returns

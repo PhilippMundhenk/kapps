@@ -1,6 +1,6 @@
 from core.kapp import Kapp
 from core.kcommand import Kcommand, KcommandParam
-from apps.notifications.notifications import Notify
+from core.commands import Notify
 
 
 class Ping(Kcommand):

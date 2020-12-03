@@ -33,6 +33,9 @@ class Kapp():
         self.subscribe(Icon(self.iconHash), self.iconCallback)
         self.subscribe(Resource(self.resourceHash), self.resourceCallback)
 
+    def needsLauncherEntry(self):
+        return True
+
     def getAppPythonPath(self):
         return self.appPath
 

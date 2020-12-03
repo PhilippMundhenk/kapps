@@ -1,5 +1,5 @@
 from core.kapp import Kapp
-from core.commands import Quit
+from core.commands import Quit, Launcher
 
 
 class QuitApp(Kapp):
@@ -7,7 +7,7 @@ class QuitApp(Kapp):
 
     def homeCallback(self):
         self.publish(Quit())
-        return {"code": 301, "headers": [['Location', "/"]]}
+        return self.publish(Launcher())[0]
 
     def iconCallback(self):
         return {"code": 200, "content": self.getRes("icon.png")}

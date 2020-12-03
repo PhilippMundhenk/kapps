@@ -1,5 +1,6 @@
 from BaseHTTPServer import BaseHTTPRequestHandler
 from core.kcommand import KcommandParam
+from core.commands import Launcher
 
 
 class HTTPRESTHandler(BaseHTTPRequestHandler):
@@ -10,22 +11,6 @@ class HTTPRESTHandler(BaseHTTPRequestHandler):
         with open(path.replace("/", "", 1), 'r') as file:
             return file.read()
 
-    def getLauncher(self):
-        # TODO: Insert reading of apps here!
-        text = "<tr>"
-        cnt = 0
-        for uuid, app in self.ctx.getSortedApps():
-            text = text + "<td>" + "<p align=\"center\"><a href=\"" + app.getHomeCommand().toURL() + "\"><img border=\"0\" src=\"" + app.getIconCommand().toURL() + "\"/><br/>" + \
-                app.name + "</a></p>" + "</td>"
-
-            cnt = cnt + 1
-            if cnt % 3 == 0:
-                text = text + "</tr><tr>"
-        text = text + "</tr>"
-
-        with open('core/res/launcher.html', 'r') as file:
-            return file.read().replace("$APPS$", text)
-
     def do_GET(self):
         HTTPRESTHandler.cnt = HTTPRESTHandler.cnt + 1
         if HTTPRESTHandler.cnt > 20:
@@ -33,28 +18,25 @@ class HTTPRESTHandler(BaseHTTPRequestHandler):
             HTTPRESTHandler.cnt = 0
 
         if self.path.startswith('/apps'):
-            print("self.path=" + self.path)
+            print("path = " + self.path)
             kcommandHash = self.path.split("/")[2]
-            print("kcommandHash=" + kcommandHash)
             paramString = self.path.replace(
                 "/apps", "").replace("/" + kcommandHash + "/", "")
-            print("paramString=" + paramString)
             params = []
+            print("params len=" + str(len(params)))
             if len(paramString) > 0:
                 paramList = paramString.split("/")
                 for p in paramList:
                     if p != "":
                         params.append(KcommandParam(string=p))
 
-                print("calling " + kcommandHash +
-                      " with paramString: \"" + paramString + "\"")
-                print("resulting in paramList length: " + str(len(paramList)))
-
+            resp = None
             if len(params) == 0:
                 resp = self.ctx.publishByKcommandHash(kcommandHash)[0]
             else:
                 resp = self.ctx.publishByKcommandHash(
                     kcommandHash, data=params)[0]
+
             self.send_response(resp["code"])
             if "headers" in resp:
                 for h in resp["headers"]:
@@ -63,9 +45,12 @@ class HTTPRESTHandler(BaseHTTPRequestHandler):
             if "content" in resp:
                 self.wfile.write(resp["content"])
         elif self.path == '/':
-            self.send_response(200)
+            resp = self.ctx.publish(Launcher())[0]
+            if resp is None:
+                print("ERROR!")
+            self.send_response(resp["code"])
             self.end_headers()
-            self.wfile.write(self.getLauncher())
+            self.wfile.write(resp["content"])
         elif self.path.startswith("/core/res/"):
             self.send_response(200)
             self.end_headers()

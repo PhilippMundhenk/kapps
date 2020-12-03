@@ -2,6 +2,7 @@ import shutil
 from core.kapp import Kapp
 from core.Kcommand import Kcommand, KcommandParam
 import uuid
+from core.commands import Launcher, Notify
 
 
 class Uninstall(Kcommand):
@@ -24,7 +25,12 @@ class Uninstaller(Kapp):
                 self.ctx.removeAppByIDString(appID)
                 shutil.rmtree(self.ctx.getBasePath() + "/apps/" + app.name)
 
-        return {"code": 301, "headers": [['Location', "/"]]}
+                title = KcommandParam(key="title", value="Uninstaller")
+                message = KcommandParam(
+                    key="message", value="App " + a["name"] + " uninstalled")
+                self.publish(Notify([title, message]))
+
+        return self.publish(Launcher())[0]
 
     def homeCallback(self):
         # app is started
