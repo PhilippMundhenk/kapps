@@ -6,8 +6,9 @@ import uuid
 from subprocess import call
 import apps
 import os
-from core.commands import Quit
-from core.errors import Kerror
+import shutil
+from core.commands import Quit, Screenshot, Notify
+import traceback
 
 
 basePath = "/mnt/us/kapps/"
@@ -20,6 +21,7 @@ class Core():
                   "apps.settings", "apps.quit"]
     apps = {}
     subscriptions = {}
+    commandRegistry = {}
 
     def import_submodules(self, package, recursive=True):
         """ Import all submodules of a module, recursively,
@@ -53,11 +55,12 @@ class Core():
             if not alreadyRegistered:
                 try:
                     register = getattr(AllApps[name], "register")
-                    appID = uuid.uuid1()
+                    appID = uuid.uuid4()
                     print("registering " + name + "...")
                     app = register(appID, name.rsplit(".", 1)[0], self)
                     print(name + " registered")
                     self.apps[appID] = app
+                    print("list of apps=" + str(self.apps))
                 except AttributeError as e:
                     print("Error registering app: ")
                     print(e)
@@ -91,8 +94,8 @@ class Core():
     def getSortedApps(self):
         return sorted(self.getApps().items(), key=lambda x: x[1].name)
 
-    def getAppByIDString(self, id):
-        return self.apps[uuid.UUID(id)]
+    def getAppByIDString(self, idString):
+        return self.apps[uuid.UUID(idString)]
 
     def getAppByID(self, id):
         return self.apps[id]
@@ -105,39 +108,36 @@ class Core():
     def flushScreen(self):
         call(["/mnt/us/kapps/core/util/flushScreen.sh"])
 
+    def getKcommand(self, kcommandHash):
+        cmd = self.commandRegistry[kcommandHash]()
+        cmd.commandIDfromHash(kcommandHash)
+        return cmd
+
     def subscribe(self, kcommand, callback, subscriber):
-        if kcommand in self.subscriptions:
+        print("subscription received for " + kcommand.hash())
+        if kcommand.hash() in self.subscriptions:
             self.subscriptions[kcommand.hash()].append(callback)
         else:
             self.subscriptions[kcommand.hash()] = [callback]
 
-    def publish(self, kcommand, data=None):
-        return self.publishByKcommandHash(kcommand.hash(), data)
+        if kcommand.hash() not in self.commandRegistry:
+            self.commandRegistry[kcommand.hash()] = type(kcommand)
 
-    def publishByKcommandHash(self, kcommandHash, data=None):
-        print("received command: " + kcommandHash + " with data: " + str(data))
-        if kcommandHash in self.subscriptions:
-            returns = []
-            for callback in self.subscriptions[kcommandHash]:
-                resp = None
-                if data is not None:
-                    try:
-                        resp = callback(data)
-                    except Exception as e:
-                        print(e)
-                        returns.append(Kerror(technicalMessage=str(
-                            e), guiMessage="Something went wrong"))
-                else:
-                    try:
-                        resp = callback()
-                    except Exception as e:
-                        print(e)
-                        returns.append(Kerror(technicalMessage=str(
-                            e), guiMessage="Something went wrong..."))
+    def publish(self, kcommand):
+        try:
+            print("publish with kcommand=" + str(kcommand) +
+                  " and kcommand.hash()=" + kcommand.hash())
+            if kcommand.hash() in self.subscriptions:
+                returns = []
+                for callback in self.subscriptions[kcommand.hash()]:
+                    resp = callback(kcommand)
+                    returns.append(resp)
 
-                returns.append(resp)
-
-            return returns
+                return returns
+        except Exception:
+            track = traceback.format_exc()
+            print(track)
+            os._exit(0)
 
     def getBasePath(self):
         return basePath
@@ -153,10 +153,26 @@ class Core():
         os.system(command)
         os._exit(0)
 
+    def screenshot(self):
+        imagePath = "/mnt/us/images"
+        command = "/usr/sbin/screenshot"
+        os.system(command)
+        title = KcommandParam(key="title", value="Screenshot")
+        message = KcommandParam(
+            key="message", value="Screenshot taken")
+        self.publish(Notify([title, message]), self)
+        os.mkdir(imagePath)
+        path = "/mnt/us"
+        files = os.listdir(path)
+        paths = [os.path.join(path, basename) for basename in files]
+        file = max(paths, key=os.path.getctime)
+        shutil.copy(file, imagePath)
+
     def main(self):
         self.scanApps()
 
         self.subscribe(Quit(), self.quit, self)
+        self.subscribe(Screenshot(), self.screenshot, self)
 
         print("starting webserver...")
         HTTPRESTHandler.ctx = self

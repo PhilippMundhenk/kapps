@@ -1,44 +1,53 @@
-class KcommandParam(object):
-    paramEqual = "===:==="
-
-    def __init__(self, key=None, value=None, string=None):
-        if key is not None:
-            self.key = key
-            if value is not None:
-                self.value = value
-            else:
-                self.value = None
-        elif string is not None:
-            self.fromString(string)
-
-    def toString(self):
-        paramString = ""
-        paramString = paramString + "/" + self.key
-        if self.value is not None:
-            paramString = paramString + self.paramEqual + self.value
-
-        return paramString
-
-    def fromString(self, string):
-        parts = string.split(self.paramEqual)
-        self.key = parts[0]
-        if len(parts) > 1:
-            self.value = parts[1]
+import re
 
 
 class Kcommand(object):
-    def __init__(self, name, commandID, params=None):
+    paramEqual = "===:==="
+
+    def __init__(self, name, commandID):
         self.name = name
         self.commandID = commandID
-        self.params = params
+        self.params = dict()
+
+    def setParam(self, name, param):
+        return self.setParameter(name, param)
+
+    def getParam(self, name):
+        return self.getParameter(name)
+
+    def setParameter(self, name, param):
+        self.params[name] = param
+        return self
+
+    def getParameter(self, name):
+        return self.params[name]
+
+    def commandIDfromHash(self, hashString):
+        self.commandID = hashString.split(".")[1]
 
     def hash(self):
         return self.name + "." + self.commandID
 
     def toURL(self):
         paramString = ""
-        if self.params is not None:
-            for p in self.params:
-                paramString = paramString + p.toString()
+        for p in self.params:
+            paramString = paramString + "/" + \
+                p.replace("/", "//") + self.paramEqual + \
+                str(self.params[p]).replace("/", "//")
 
-        return "/apps/" + self.hash() + paramString + "/"
+        return "/apps/" + self.hash() + paramString
+
+    def paramsFromString(self, string):
+        self.paramCount = 0
+        self.params = dict()
+
+        # split for single / but not //, ignore initial /:
+        paramList = re.split("(?<!/)/(?!/)", string[1:])
+        for p in paramList:
+            parts = p.split(self.paramEqual)
+            val = None
+            if len(parts) > 1:
+                val = parts[1].replace("//", "/")
+
+            self.params[parts[0].replace("//", "/")] = val
+            self.paramCount = self.paramCount + 1

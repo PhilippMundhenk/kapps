@@ -1,61 +1,54 @@
 import shutil
 from core.kapp import Kapp
-from core.Kcommand import Kcommand, KcommandParam
+from core.Kcommand import Kcommand
 import uuid
 from core.commands import Launcher, Notify
 from core.httpResponse import HTTPResponse
+import os, time
 
 
 class Uninstall(Kcommand):
     uninstallHash = str(uuid.uuid4())
 
-    def __init__(self, params=None):
+    def __init__(self):
         super(Uninstall, self).__init__(
-            "Uninstall", self.uninstallHash, params=params)
+            "Uninstall", self.uninstallHash)
 
 
 class Uninstaller(Kapp):
     name = "Uninstaller"
 
-    def uninstallCallback(self, params):
-        for p in params:
-            if p.key == "appID":
-                appID = p.value
-
-                app = self.ctx.getAppByIDString(appID)
-                self.ctx.removeAppByIDString(appID)
-                shutil.rmtree(self.ctx.getBasePath() + "/apps/" + app.name)
-
-                title = KcommandParam(key="title", value="Uninstaller")
-                message = KcommandParam(
-                    key="message", value="App " + a["name"] + " uninstalled")
-                self.publish(Notify([title, message]))
+    def uninstallCallback(self, kcommand):
+        appID = kcommand.getParam("appID")
+        app = self.ctx.getAppByIDString(appID)
+        self.ctx.removeAppByIDString(appID)
+        shutil.rmtree(self.ctx.getBasePath() + "/apps/" + app.name)
+        self.publish(Notify().setParam("title", "Uninstaller").setParam(
+            "message", "App " + app.name + " uninstalled"))
 
         return self.publish(Launcher())[0]
 
-    def homeCallback(self):
+    def homeCallback(self, kcommand):
         # app is started
         text = ""
 
-        self.subscribe(Uninstall(), self.uninstallCallback)
-
         for appID, a in self.ctx.getSortedApps():
             if not self.ctx.isSystemApp(a.getAppPythonPath()):
-                p = KcommandParam(key="appID", value=str(appID))
-                print("Uninstall([p]).toURL()=" + Uninstall([p]).toURL())
                 text = text + "<tr><td><h3>" + \
                     a.name + '</h3></td><td></td>' + \
-                    '<td><a href="' + Uninstall([p]).toURL() + \
+                    '<td><a href="' + Uninstall().setParam("appID", appID).toURL() + \
                     '" class="button">uninstall</a>' + \
                     '</td></tr>'
 
         content = self.getRes("list.html").replace("$APPS$", text)
         return HTTPResponse(content=content)
 
-    def iconCallback(self):
+    def iconCallback(self, kcommand):
         return HTTPResponse(content=self.getRes("icon.png"))
 
 
 def register(appID, appPath, ctx):
     print("register " + Uninstaller.name)
-    return Uninstaller(appID, appPath, ctx)
+    app = Uninstaller(appID, appPath, ctx)
+    app.subscribe(Uninstall(), app.uninstallCallback)
+    return app

@@ -14,6 +14,12 @@ class Launcher(Kcommand):
 
 
 class Notify(Kcommand):
-    def __init__(self, params=None):
+    def __init__(self):
         super(Notify, self).__init__(
-            "Notify", "kapps-notification-command-hash", params=params)
+            "Notify", "kapps-notification-command-hash")
+
+
+class Screenshot(Kcommand):
+    def __init__(self):
+        super(Screenshot, self).__init__(
+            "Screenshot", "kapps-screenshot-command-hash")

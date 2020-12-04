@@ -5,35 +5,34 @@ import ssl
 import shutil
 from core.kapp import Kapp
 import uuid
-from core.kcommand import Kcommand, KcommandParam
+from core.kcommand import Kcommand
 from core.commands import Launcher, Notify
 from core.httpResponse import HTTPResponse
-from core.errors import Kerror
 
 
 class WaitScreen(Kcommand):
     waitScreenHash = str(uuid.uuid4())
 
-    def __init__(self, params=None):
+    def __init__(self):
         super(WaitScreen, self).__init__(
-            "WaitScreen", self.waitScreenHash, params=params)
+            "WaitScreen", self.waitScreenHash)
 
 
 class Install(Kcommand):
     installHash = str(uuid.uuid4())
 
-    def __init__(self, params=None):
+    def __init__(self):
         super(Install, self).__init__(
-            "Install", self.installHash, params=params)
+            "Install", self.installHash)
 
 
 class Installer(Kapp):
     name = "Installer"
 
-    def iconCallback(self):
+    def iconCallback(self, kcommand):
         return HTTPResponse(content=self.getRes("icon.png"))
 
-    def homeCallback(self):
+    def homeCallback(self, kcommand):
         # app is started
         text = ""
 
@@ -47,104 +46,87 @@ class Installer(Kapp):
 
         text = text + '<tr><td colspan="3"><p style="font-size:25px;"><u>Repo github.com/PhilippMundhenk/kapps-list:</u></p></td></tr>'
 
-        self.subscribe(WaitScreen(), self.waitScreenCallback)
-
         for a in self.availableApps["apps"]:
-            p = KcommandParam(key="appName", value=a["name"])
-
-            print("WaitScreen([p]).toURL()=" + WaitScreen([p]).toURL())
             text = text + "<tr><td><h3>" + \
                 a["name"] + "</h3></td><td></td><td><a href=\"" + \
-                WaitScreen([p]).toURL() + \
+                WaitScreen().setParam("appName", a["name"]).toURL() + \
                 '" class="button">(re-)install/update</a></td></tr>'
-
-            print("text= " + text)
 
         content = self.getRes("list.html").replace("$APPS$", text)
         return HTTPResponse(content=content)
 
-    def waitScreenCallback(self, params):
-        # TODO: unsubscribe WaitScreen?
+    def waitScreenCallback(self, kcommand):
         page = self.getRes("installing.html")
-        for p in params:
-            if p.key == "appName":
-                page = page.replace("$APP$", p.value)
+        page = page.replace("$APP$", kcommand.getParam("appName"))
 
-                self.subscribe(Install(), self.installCallback)
+        installCmd = Install()
+        installCmd.params = kcommand.params
 
-                print("Install(params).toURL()=" + Install(params).toURL())
-                # TODO: replace with install command!
-                page = page.replace("$URL$", Install(params).toURL())
+        page = page.replace("$URL$", installCmd.toURL())
 
-                return HTTPResponse(content=page)
+        return HTTPResponse(content=page)
 
-        return Kerror(technicalMessage="No Parameter 'appName' given", guiMessage="Something went wrong...")
-
-    def installCallback(self, params):
-        # TODO: unsubscribe Install?
+    def installCallback(self, kcommand):
         print("download triggered")
 
-        # format: /apps/<appID>/download/<appName>
-        for p in params:
-            if p.key == "appName":
-                appName = p.value
+        appName = kcommand.getParam("appName")
+        tmpDir = self.ctx.getBasePath() + "/tmp/"
 
-                tmpDir = self.ctx.getBasePath() + "/tmp/"
+        # download selected app:
+        try:
+            os.mkdir(tmpDir)
+        except OSError:
+            pass
 
-                # download selected app:
+        for a in self.availableApps["apps"]:
+            if a["name"] == appName:
+                with open(tmpDir + appName + '.kapp', 'wb') as f:
+                    request = urllib2.Request(a["package"])
+                    response = urllib2.urlopen(
+                        request, context=ssl._create_unverified_context())
+                    f.write(response.read())
+                    f.close()
+
+                tmpPath = tmpDir + a["name"]
                 try:
-                    os.mkdir(tmpDir)
+                    shutil.rmtree(tmpPath)
                 except OSError:
                     pass
+                os.mkdir(tmpPath)
+                command = "unzip " + tmpDir + appName + \
+                    ".kapp -d " + tmpPath
+                os.system(command)
 
-                for a in self.availableApps["apps"]:
-                    if a["name"] == appName:
-                        with open(tmpDir + appName + '.kapp', 'wb') as f:
-                            request = urllib2.Request(a["package"])
-                            response = urllib2.urlopen(
-                                request, context=ssl._create_unverified_context())
-                            f.write(response.read())
-                            f.close()
+                manifestFile = [os.path.join(dp, f) for dp, dn,
+                                filenames in os.walk(tmpPath) for f in filenames if os.path.basename(f) == 'manifest.kapp'][0]
+                with open(manifestFile) as f:
+                    manifest = json.loads(f.read())
+                    folder = os.path.dirname(
+                        manifestFile) + "/" + manifest["app"]["folder"]
 
-                        tmpPath = tmpDir + a["name"]
-                        try:
-                            shutil.rmtree(tmpPath)
-                        except OSError:
-                            pass
-                        os.mkdir(tmpPath)
-                        command = "unzip " + tmpDir + appName + \
-                            ".kapp -d " + tmpPath
-                        os.system(command)
+                try:
+                    shutil.rmtree(self.ctx.getBasePath() + "/apps/" +
+                                  os.path.basename(folder))
+                    # if this is successful, app was installed before, needs to be unregistered:
+                    self.ctx.removeApp(self.ctx.getAppByPythonPath(
+                        "apps." + os.path.basename(folder)))
+                except OSError:
+                    pass
+                shutil.move(folder, self.ctx.getBasePath() + "/apps")
+                os.remove(tmpDir + a["name"] + ".kapp")
+                shutil.rmtree(tmpPath)
 
-                        manifestFile = [os.path.join(dp, f) for dp, dn,
-                                        filenames in os.walk(tmpPath) for f in filenames if os.path.basename(f) == 'manifest.kapp'][0]
-                        with open(manifestFile) as f:
-                            manifest = json.loads(f.read())
-                            folder = os.path.dirname(
-                                manifestFile) + "/" + manifest["app"]["folder"]
+                self.ctx.scanApps()
 
-                        try:
-                            shutil.rmtree(self.ctx.getBasePath() + "/apps/" +
-                                          os.path.basename(folder))
-                            # if this is successful, app was installed before, needs to be unregistered:
-                            self.ctx.removeApp(self.ctx.getAppByPythonPath(
-                                "apps." + os.path.basename(folder)))
-                        except OSError:
-                            pass
-                        shutil.move(folder, self.ctx.getBasePath() + "/apps")
-                        os.remove(tmpDir + a["name"] + ".kapp")
-                        shutil.rmtree(tmpPath)
-
-                        self.ctx.scanApps()
-
-                        title = KcommandParam(key="title", value="Installer")
-                        message = KcommandParam(
-                            key="message", value="App " + a["name"] + " installed")
-                        self.publish(Notify([title, message]))
+                self.publish(Notify().setParam("title", "Installer").setParam(
+                    "message", "App " + a["name"] + " installed"))
 
         return self.publish(Launcher())[0]
 
 
 def register(appID, appPath, ctx):
     print("register " + Installer.name)
-    return Installer(appID, appPath, ctx)
+    app = Installer(appID, appPath, ctx)
+    app.subscribe(WaitScreen(), app.waitScreenCallback)
+    app.subscribe(Install(), app.installCallback)
+    return app

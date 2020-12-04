@@ -1,23 +1,24 @@
 from core.kcommand import Kcommand
 import uuid
+from core.httpResponse import HTTPResponse
 
 
 class Home(Kcommand):
-    def __init__(self, classHash):
+    def __init__(self):
         super(Home, self).__init__(
-            "Home", classHash)
+            "Home", "kapps-home-command-hash")
 
 
 class Icon(Kcommand):
-    def __init__(self, classHash):
+    def __init__(self):
         super(Icon, self).__init__(
-            "Icon", classHash)
+            "Icon", "kapps-icon-command-hash")
 
 
 class Resource(Kcommand):
-    def __init__(self, classHash):
+    def __init__(self):
         super(Resource, self).__init__(
-            "Resource", classHash)
+            "Resource", "kapps-resource-command-hash")
 
 
 class Kapp():
@@ -29,9 +30,15 @@ class Kapp():
         self.iconHash = str(uuid.uuid4())
         self.resourceHash = str(uuid.uuid4())
 
-        self.subscribe(Home(self.homeHash), self.homeCallback)
-        self.subscribe(Icon(self.iconHash), self.iconCallback)
-        self.subscribe(Resource(self.resourceHash), self.resourceCallback)
+        h = Home()
+        h.commandID = self.homeHash
+        self.subscribe(h, self.homeCallback)
+        i = Icon()
+        i.commandID = self.iconHash
+        self.subscribe(i, self.iconCallback)
+        r = Resource()
+        r.commandID = self.resourceHash
+        self.subscribe(r, self.resourceCallback)
 
     def needsLauncherEntry(self):
         return True
@@ -53,21 +60,25 @@ class Kapp():
         self.ctx.subscribe(kcommand, callback, self)
 
     def publish(self, kcommand):
-        return self.ctx.publish(kcommand, kcommand.params)
+        return self.ctx.publish(kcommand)
 
-    def homeCallback(self):
+    def homeCallback(self, kcommand):
         with open(self.ctx.getCorePath() + '/res/appHome.html', 'r') as file:
-            return {"code": 200, "content": file.read().replace("$APPNAME$", self.name)}
+            return HTTPResponse(content=file.read().replace("$APPNAME$", self.name))
 
-    def iconCallback(self):
+    def iconCallback(self, kcommand):
         with open(self.ctx.getCorePath() + '/res/appIcon.png', 'r') as file:
-            return {"code": 200, "content": file.read()}
+            return HTTPResponse(content=file.read())
 
-    def resourceCallback(self, param):
-        return {"code": 200, "content": self.getRes(param)}
+    def resourceCallback(self, kcommand):
+        return HTTPResponse(content=self.getRes(kcommand.getParameter("path")))
 
     def getHomeCommand(self):
-        return Home(self.homeHash)
+        h = Home()
+        h.commandID = self.homeHash
+        return h
 
     def getIconCommand(self):
-        return Icon(self.iconHash)
+        i = Icon()
+        i.commandID = self.iconHash
+        return i

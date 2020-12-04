@@ -9,14 +9,14 @@ class LauncherApp(Kapp):
     def needsLauncherEntry(self):
         return False
 
-    def homeCallback(self):
+    def homeCallback(self, kcommand):
         self.publish(Launcher())
         return self.publish(Launcher())[0]
 
-    def iconCallback(self):
+    def iconCallback(self, kcommand):
         return HTTPResponse(content=self.getRes("icon.png"))
 
-    def getLauncher(self):
+    def launcherCallBack(self, kcommand):
         # TODO: Insert reading of apps here!
         text = "<tr>"
         cnt = 0
@@ -36,5 +36,5 @@ class LauncherApp(Kapp):
 def register(appID, appPath, ctx):
     print("register " + LauncherApp.name)
     app = LauncherApp(appID, appPath, ctx)
-    app.subscribe(Launcher(), app.getLauncher)
+    app.subscribe(Launcher(), app.launcherCallBack)
     return app

@@ -5,10 +5,10 @@ from core.httpResponse import HTTPResponse
 class Settings(Kapp):
     name = "Settings"
 
-    def homeCallback(self):
+    def homeCallback(self, kcommand):
         return HTTPResponse(content=self.getRes("list.html"))
 
-    def iconCallback(self):
+    def iconCallback(self, kcommand):
         return HTTPResponse(content=self.getRes("icon.png"))
 
 

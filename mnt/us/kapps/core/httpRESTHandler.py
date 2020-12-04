@@ -1,5 +1,4 @@
 from BaseHTTPServer import BaseHTTPRequestHandler
-from core.kcommand import KcommandParam
 from core.commands import Launcher
 from core.httpResponse import HTTPResponse
 from core.errors import Kerror
@@ -29,22 +28,16 @@ class HTTPRESTHandler(BaseHTTPRequestHandler):
         if self.path.startswith('/apps'):
             print("path = " + self.path)
             kcommandHash = self.path.split("/")[2]
+            print("kcommandHash = " + kcommandHash)
             paramString = self.path.replace(
-                "/apps", "").replace("/" + kcommandHash + "/", "")
-            params = []
-            print("params len=" + str(len(params)))
-            if len(paramString) > 0:
-                paramList = paramString.split("/")
-                for p in paramList:
-                    if p != "":
-                        params.append(KcommandParam(string=p))
-
-            resp = None
-            if len(params) == 0:
-                resp = self.ctx.publishByKcommandHash(kcommandHash)[0]
-            else:
-                resp = self.ctx.publishByKcommandHash(
-                    kcommandHash, data=params)[0]
+                "/apps", "").replace("/" + kcommandHash, "")
+            print("paramString = " + paramString)
+            kcommand = self.ctx.getKcommand(kcommandHash)
+            print("kcommand = " + str(kcommand))
+            kcommand.paramsFromString(paramString)
+            resps = self.ctx.publish(kcommand)
+            print("resps = " + str(resps))
+            resp = resps[0]
 
             if isinstance(resp, HTTPResponse):
                 self.send_response(resp.returnCode)

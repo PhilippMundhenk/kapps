@@ -6,11 +6,11 @@ from core.httpResponse import HTTPResponse
 class QuitApp(Kapp):
     name = "Quit"
 
-    def homeCallback(self):
+    def homeCallback(self, kcommand):
         self.publish(Quit())
         return self.publish(Launcher())[0]
 
-    def iconCallback(self):
+    def iconCallback(self, kcommand):
     	return HTTPResponse(content=self.getRes("icon.png"))
 
 
