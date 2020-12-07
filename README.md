@@ -10,6 +10,24 @@ Not that this project is still in a very early stage, I might gradually extend i
 - Commands for communication between applications and GUI
 - Notification system
 
+## Installation
+
+You first need to fulfill a number of requirements:
+
+### Requirements
+
+- Kindle Touch: Likely also running on other Kindles, but not tested.
+- Jailbreak for Kindle Touch, see [here](https://www.mobileread.com/forums/showthread.php?t=275877)
+- (optional) USB Networking, see [here](https://www.mobileread.com/forums/showthread.php?t=186645)
+- WebLaunch, see [here](https://github.com/PaulFreund/WebLaunch)
+- Python, see [here](https://www.mobileread.com/forums/showthread.php?t=225030)
+
+Technically, WebLaunch is not required, as it uses the internal browser, but it is a nice wrapper, that I have not yet fully integrated. It is also an extension for KUAL, the Kindle Unified Application Launcher, which we will not be using.
+
+### kapps
+
+After all requirements are fulfilled, simply copy the files from this repo to your Kindle's file system root (/).
+
 ## Basic Application
 
 The Quit application is a very basic application without GUI. It consists of only a few files:
@@ -44,16 +62,6 @@ class QuitApp(Kapp):
 def register(appID, appPath, ctx):
     return QuitApp(appID, appPath, ctx)
 ```
-
-## Requirements
-
-- Kindle Touch: Likely also running on other Kindles, but not tested.
-- Jailbreak for Kindle Touch, see [here](https://www.mobileread.com/forums/showthread.php?t=275877)
-- (optional) USB Networking, see [here](https://www.mobileread.com/forums/showthread.php?t=186645)
-- WebLaunch, see [here](https://github.com/PaulFreund/WebLaunch)
-- Python, see [here](https://www.mobileread.com/forums/showthread.php?t=225030)
-
-Technically, WebLaunch is not required, as it uses the internal browser, but it is a nice wrapper, that I have not yet fully integrated. It is also an extension for KUAL, the Kindle Unified Application Launcher, which we will not be using.
 
 ## Screenshots
 
