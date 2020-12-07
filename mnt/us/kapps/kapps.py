@@ -7,7 +7,7 @@ from subprocess import call
 import apps
 import os
 import shutil
-from core.commands import Quit, Screenshot, Notify
+from core.commands import *
 import traceback
 
 
@@ -105,8 +105,9 @@ class Core():
             if self.apps[a].getAppPythonPath() == path:
                 return self.apps[a]
 
-    def flushScreen(self):
-        call(["/mnt/us/kapps/core/util/flushScreen.sh"])
+    def flushScreen(self, kcommand):
+        cmd = "echo 1 > /sys/devices/platform/mxc_epdc_fb/mxc_epdc_update"
+        os.system(cmd)
 
     def getKcommand(self, kcommandHash):
         cmd = self.commandRegistry[kcommandHash]()
@@ -173,6 +174,7 @@ class Core():
 
         self.subscribe(Quit(), self.quit, self)
         self.subscribe(Screenshot(), self.screenshot, self)
+        self.subscribe(FlushScreen(), self.flushScreen, self)
 
         print("starting webserver...")
         HTTPRESTHandler.ctx = self

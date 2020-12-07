@@ -3,7 +3,6 @@ from core.httpResponse import HTTPResponse
 from core.Kcommand import Kcommand
 import uuid
 import os
-import time
 
 
 class GetImage(Kcommand):

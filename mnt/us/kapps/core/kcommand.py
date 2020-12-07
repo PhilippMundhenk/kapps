@@ -4,6 +4,8 @@ import re
 class Kcommand(object):
     paramEqual = "===:==="
 
+    a = ""
+
     def __init__(self, name, commandID):
         self.name = name
         self.commandID = commandID
@@ -38,7 +40,6 @@ class Kcommand(object):
         return "/apps/" + self.hash() + paramString
 
     def paramsFromString(self, string):
-        self.paramCount = 0
         self.params = dict()
 
         # split for single / but not //, ignore initial /:
@@ -49,5 +50,5 @@ class Kcommand(object):
             if len(parts) > 1:
                 val = parts[1].replace("//", "/")
 
-            self.params[parts[0].replace("//", "/")] = val
-            self.paramCount = self.paramCount + 1
+            name = parts[0].replace("//", "/")
+            self.params[name] = val

@@ -1,5 +1,5 @@
 from BaseHTTPServer import BaseHTTPRequestHandler
-from core.commands import Launcher
+from core.commands import Launcher, FlushScreen
 from core.httpResponse import HTTPResponse
 from core.errors import Kerror
 
@@ -22,7 +22,7 @@ class HTTPRESTHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         HTTPRESTHandler.cnt = HTTPRESTHandler.cnt + 1
         if HTTPRESTHandler.cnt > 20:
-            self.ctx.flushScreen()
+            self.ctx.publish(FlushScreen())
             HTTPRESTHandler.cnt = 0
 
         if self.path.startswith('/apps'):

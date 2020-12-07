@@ -1,15 +1,14 @@
-from core.kapp import Kapp, Home
+from core.kapp import Kapp
 from core.Kcommand import Kcommand
 from core.commands import Notify, Launcher
 import uuid
 from datetime import datetime
 from core.httpResponse import HTTPResponse
-import os, time
 
 
 class DismissNotification(Kcommand):
     dismissHash = str(uuid.uuid4())
-
+    
     def __init__(self):
         super(DismissNotification, self).__init__(
             "DismissNotification", self.dismissHash)
@@ -40,7 +39,8 @@ class Notifications(Kapp):
             return ret[0]
 
     def notificationCallback(self, kcommand):
-        n = Notification(kcommand.getParam("title"), kcommand.getParam("message"))
+        n = Notification(kcommand.getParam("title"),
+                         kcommand.getParam("message"))
         self.notifications[str(n.id)] = n
         return None
 

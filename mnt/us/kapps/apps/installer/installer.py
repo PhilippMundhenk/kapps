@@ -60,7 +60,7 @@ class Installer(Kapp):
         page = page.replace("$APP$", kcommand.getParam("appName"))
 
         installCmd = Install()
-        installCmd.params = kcommand.params
+        installCmd.params = dict(kcommand.params)
 
         page = page.replace("$URL$", installCmd.toURL())
 

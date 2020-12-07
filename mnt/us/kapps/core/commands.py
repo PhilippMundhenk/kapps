@@ -23,3 +23,9 @@ class Screenshot(Kcommand):
     def __init__(self):
         super(Screenshot, self).__init__(
             "Screenshot", "kapps-screenshot-command-hash")
+
+
+class FlushScreen(Kcommand):
+    def __init__(self):
+        super(FlushScreen, self).__init__(
+            "FlushScreen", "kapps-flushscreen-command-hash")

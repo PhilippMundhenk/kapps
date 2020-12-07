@@ -4,7 +4,6 @@ from core.Kcommand import Kcommand
 import uuid
 from core.commands import Launcher, Notify
 from core.httpResponse import HTTPResponse
-import os, time
 
 
 class Uninstall(Kcommand):
