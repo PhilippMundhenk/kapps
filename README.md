@@ -60,7 +60,11 @@ Technically, WebLaunch is not required, as it uses the internal browser, but it 
 
 After all requirements are fulfilled, simply copy the folders etc/ and mnt/ from this repo to your Kindle's file system root (/).
 
-## Basic Application
+## Application Examples
+
+To show how easy a simple application can be, here are two examples, with and without GUI.
+
+### Basic Application
 
 The Quit application is a very basic application without GUI. It consists of only a few files:
 
@@ -72,7 +76,7 @@ Quit/
 ├─ quit.py
 ```
 
-The implementation is as simple as this:
+While the __init__.py only marks the existence of a module and is empty, the implementation contained in the quit.py is as simple as this:
 
 ```py
 from core.kapp import Kapp
@@ -99,7 +103,7 @@ By default, every app implements at least the register() method. This creates a 
 When listing the app in the launcher (potentially other places), the Icon command is issued for that app and consequently, the iconCallback() is called to retrieve the icon. This does not need to be static (see e.g., Notifications app). 
 When starting the app, the Home command is issued and consequently the homeCallback() is called, potentially returning an HTTPResponse (see below), or itself calling another command, e.g., to start the launcher.
 
-## Basic GUI Application
+### Basic GUI Application
 
 A simple GUI application can be as simple as this:
 
@@ -126,7 +130,7 @@ def register(appID, appPath, ctx):
 ```
 
 The skeleton of this app is identical to the non-GUI app. However, we see that the homeCallback() here returns an HTTPResponse, resulting in a website being shown. Note that the given HTTPResponse is not optimal, as it traps the user on the page with no way to return to kapps.
-Also not, how the Notify command is being used here to send a notification to the system, when the app is started.
+Also note, how the Notify command is being used here to send a notification to the system, when the app is started.
 
 ## Screenshots
 
