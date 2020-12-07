@@ -130,6 +130,8 @@ Also not, how the Notify command is being used here to send a notification to th
 
 ## Screenshots
 
+These screenshots are taken directly from the Kindle in kapps using the Screenshot command.
+
 ### Launcher
 
 ![Launcher](screenshots/launcher.png)
